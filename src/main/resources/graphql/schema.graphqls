@@ -1,0 +1,79 @@
+# Định nghĩa các type dựa trên entity
+type Category {
+    id: ID!
+    name: String!
+    slug: String!
+    path: String!
+    parentId: String
+    level: Int!
+    description: String
+    postCount: Int!
+}
+
+type Post {
+    id: ID!
+    title: String!
+    content: String!
+    authorId: String!
+    status: String!
+    createdAt: String!
+    updatedAt: String!
+    categoryIds: [String!]!
+    categoryPaths: [String!]!
+    tags: [String!]!
+    slug: String!
+    views: Int!
+    likes: Int!
+}
+
+type User {
+    id: ID!
+    username: String!
+    email: String!
+    role: String!
+    createdAt: String!
+}
+
+# Các query (public, không cần auth cho đọc)
+type Query {
+    # Category queries
+    categories: [Category!]!              # Lấy tất cả danh mục
+    category(id: ID!): Category           # Lấy danh mục theo ID
+    categoriesByPath(pathPrefix: String!): [Category!]!  # Lấy danh mục con theo path
+
+    # Post queries
+    posts: [Post!]!                       # Lấy tất cả bài viết
+    post(id: ID!): Post                   # Lấy bài viết theo ID
+    postBySlug(slug: String!): Post       # Lấy bài viết theo slug
+    postsByCategory(categoryId: String!): [Post!]!  # Lấy bài theo danh mục
+    postsByTag(tag: String!): [Post!]!    # Lấy bài theo tag
+
+    # User queries
+    users: [User!]!                       # Lấy tất cả user (admin only sau này)
+    user(id: ID!): User                   # Lấy user theo ID
+}
+
+# Các mutation (yêu cầu auth và role)
+type Mutation {
+    # Post mutations
+    createPost(
+        title: String!
+        content: String!
+        categoryIds: [String!]!
+        tags: [String!]!
+    ): Post! @auth(roles: ["writer"])     # Tạo bài (writer only)
+
+    updatePost(
+        id: ID!
+        title: String
+        content: String
+        status: String
+        categoryIds: [String]
+        tags: [String]
+    ): Post! @auth(roles: ["writer"])     # Cập nhật bài (writer only)
+
+    deletePost(id: ID!): Boolean! @auth(roles: ["admin"])  # Xóa bài (admin only)
+}
+
+# Directive tùy chỉnh cho phân quyền (Spring sẽ xử lý qua @PreAuthorize)
+directive @auth(roles: [String!]!) on FIELD_DEFINITION
