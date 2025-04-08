@@ -29,6 +29,9 @@ public class AuthProxyController {
     @Value("${keycloak.client-secret}")
     private String clientSecret;
 
+    @Value("${keycloak.redirect-uri}")
+    private String redirectUri;
+
     @PostMapping("/token")
     public ResponseEntity<?> getAccessToken(@RequestBody Map<String, String> credentials) {
         return proxyToKeycloak(buildPasswordGrantForm(credentials));
@@ -42,6 +45,31 @@ public class AuthProxyController {
         }
         return proxyToKeycloak(buildRefreshGrantForm(refreshToken));
     }
+
+    @PostMapping("/oauth/token")
+    public ResponseEntity<?> exchangeCode(@RequestBody Map<String, String> body) {
+        String code = body.get("code");
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
+
+        MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
+        form.add("grant_type", "authorization_code");
+        form.add("client_id", clientId);
+        form.add("client_secret", clientSecret);
+        form.add("code", code);
+        form.add("redirect_uri", redirectUri); // Phải khớp với URI đăng ký ở Google/Keycloak
+
+        HttpEntity<MultiValueMap<String, String>> request = new HttpEntity<>(form, headers);
+
+        try {
+            ResponseEntity<String> response = restTemplate.postForEntity(keycloakTokenUrl, request, String.class);
+            return ResponseEntity.ok(response.getBody());
+        } catch (HttpClientErrorException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Exchange failed");
+        }
+    }
+
 
     private MultiValueMap<String, String> buildPasswordGrantForm(Map<String, String> body) {
         MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
