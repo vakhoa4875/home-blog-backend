@@ -37,7 +37,7 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/graphql").authenticated() // Bảo vệ GraphQL
-                        .requestMatchers("/graphiql").permitAll() // Bảo vệ GraphiQL
+                        .requestMatchers("/graphiql").authenticated() // Bảo vệ GraphiQL
                         .anyRequest().permitAll() // Các endpoint khác public
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2
